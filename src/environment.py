@@ -72,6 +72,8 @@ class Environment:
                     self.positions[thing] = self.positions[thing][0], y + dy # move a coord
                     thing.rect.y = self.positions[thing][1]
                     if thing.rect.colliderect(thing2.rect): # if anything collides after moving x
+                        if hasattr(thing, 'jumped'):
+                            thing.jumped = 10
                         if thing.mass < thing2.mass:
                             self.forces[thing] = []
                             self.positions[thing] = self.positions[thing][0], y

@@ -27,9 +27,13 @@ def check_for_events():
     if keys_pressed[K_d]:
         player_control(Force(6 , 0))
     
-    if keys_pressed[K_SPACE] and player.jumped == False:
-        player.jump(player, environment)
-        player.jumped = False
+    if keys_pressed[K_SPACE] and player.jumped > 0:
+        for force in environment.forces[player]:
+            if force.direction == -pi/2:
+                del force
+        player_control(Force(24 , pi/2))
+        player.jumped -= 1
+        
                                
 
 def get_screen_position(position):
