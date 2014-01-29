@@ -6,7 +6,7 @@ from force import Force
 
 class Player(Thing):
     gravity = True
-    jumped = 10
+    jump_power = 15
     
     '''def jump(self, thing, environment):
         print 'yolo1'
