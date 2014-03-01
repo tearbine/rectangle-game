@@ -40,7 +40,12 @@ class Environment:
                 dx = cos(force.direction)*force.magnitude/thing.mass # find the change in x
                 dy = sin(force.direction)*force.magnitude/thing.mass # find the change in y
                 
-                force.magnitude -= .01 # make the magnitude weaker over time
+                if force.direction == 0 or force.direction == pi:    
+                    force.magnitude -= .03 # make the magnitude weaker over time
+                elif force.direction == pi/2 or force.direction == -pi/2:
+                    force.magnitude -= .01
+                else:
+                    force.magnitude -= .01
                 
                 if force.magnitude > thing.speedlimit: # if the force is above thing's speed limit, cap it
                     force.magnitude = thing.speedlimit
@@ -50,43 +55,57 @@ class Environment:
                     forces.remove(force)
                 
                 
-                #----------COLLISION DETECTION AND MOVING-------------------------------------------------------------------------------    
-                            
-                        
-                self.positions[thing] = x + dx, self.positions[thing][1] # move a coord
+                #----------COLLISION DETECTION AND MOVING-------------------------------------------------------------------------------       
+                
+
+                
+                self.positions[thing] = x + dx, self.positions[thing][1] # move x
                 thing.rect.x = self.positions[thing][0]
                 for thing2 in self.things:
                     if thing.rect.colliderect(thing2.rect): # if anything collides after moving x
-                        if thing.mass < thing2.mass:
-                            self.forces[thing] = []
-                            self.positions[thing] = x, self.positions[thing][1]
-                            thing.rect.x = self.positions[thing][0]
-                            if thing.rect.right < thing2.rect.left:
-                                thing.rect.right = thing2.rect.left
-                            if thing.rect.left > thing2.rect.right:
-                                thing.rect.left = thing2.rect.right
-                            #self.positions[thing] = thing.rect.x, thing.rect.y
-                    
-                self.positions[thing] = self.positions[thing][0], y + dy # move a coord
+                        if thing != thing2:                          
+                            if hasattr(thing, 'walljump_power_right'):
+                                if thing.rect.x > thing2.rect.x:
+                                    thing.walljump_power_right = 20
+                                    thing.walljump_power_left = 0
+                                if thing.rect.x < thing2.rect.x:
+                                    thing.walljump_power_left = 20
+                                    thing.walljump_power_right = 0
+                                thing.jump_power2 = 15
+                                
+                            if thing.mass < thing2.mass:
+                                self.forces[thing] = []
+                                self.positions[thing] = x, self.positions[thing][1]
+                                thing.rect.x = self.positions[thing][0]
+                                if thing.rect.right < thing2.rect.left:
+                                    thing.rect.right = thing2.rect.left
+                                if thing.rect.left > thing2.rect.right:
+                                    thing.rect.left = thing2.rect.right
+                
+                self.positions[thing] = self.positions[thing][0], y + dy # move y
                 thing.rect.y = self.positions[thing][1]
                 for thing2 in self.things:
-                    if thing.rect.colliderect(thing2.rect): # if anything collides after moving x
-                        if hasattr(thing, 'jump_power'):
-                            if thing.rect.y < thing2.rect.y:
-                                thing.jump_power = 15
-                                thing.jump_power2 = 15
-                                thing.doublejump_delay = 2
-                        if thing.mass < thing2.mass:
-                            for force in self.forces[thing]:
-                                if force.direction == pi/2 or force.direction == -pi/2:
-                                    force.magnitude = 0
-                            self.positions[thing] = self.positions[thing][0], y
-                            thing.rect.y = self.positions[thing][1]
-                            if thing.rect.bottom < thing2.rect.top:
-                                thing.rect.bottom = thing2.rect.top
-                            if thing.rect.top > thing2.rect.bottom:
-                                thing.rect.top = thing2.rect.bottom
-                                #self.positions[thing] = thing.rect.x, thing.rect.y
+                    if thing.rect.colliderect(thing2.rect): # if anything collides after moving y
+                        if thing != thing2:
+
+                            if hasattr(thing, 'jump_power'):
+                                if thing.rect.y < thing2.rect.y:
+                                    thing.jump_power = 15
+                                    thing.jump_power2 = 15
+                                    thing.doublejump_delay = 2
+
+                            
+                            if thing.mass < thing2.mass:
+                                for force in self.forces[thing]:
+                                    if force.direction == pi/2 or force.direction == -pi/2:
+                                        force.magnitude = 0
+                                self.positions[thing] = self.positions[thing][0], y
+                                thing.rect.y = self.positions[thing][1]
+                                if thing.rect.bottom < thing2.rect.top:
+                                    thing.rect.bottom = thing2.rect.top
+                                if thing.rect.top > thing2.rect.bottom:
+                                    thing.rect.top = thing2.rect.bottom
+                                
                 #END COLLISION DETECTION AND MOVING-----------------------------------------------------------------
                                                         
                 thing.rect.x, thing.rect.y = self.positions[thing]

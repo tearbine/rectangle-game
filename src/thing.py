@@ -13,6 +13,6 @@ class Thing:
         self.colliding = False
     
     def __repr__(self):
-        return str(self.rect)
+        return str('Thing')
         
 
