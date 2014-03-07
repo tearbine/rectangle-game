@@ -1,11 +1,14 @@
-import pygame
+import pygame, sys
 from pygame.locals import *
+from settings import *
 from environment import Environment
 from player import Player
 from force import Force
 from gravity import Gravity
 from math import pi
-from tiles import Tiles
+from camera import Camera
+from levels import Levels
+from multiplayer import Client
 
 
 def start_game():
@@ -16,6 +19,7 @@ def check_for_events():
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
+            sys.exit()
                 
     keys_pressed = pygame.key.get_pressed()
     if keys_pressed[K_w]:
@@ -29,63 +33,67 @@ def check_for_events():
         player_control(Force(6 , 0))
     
     if keys_pressed[K_RETURN]:
-        environment.positions[player] = [600, 400]
+        environment.positions[player_list[playername]] = [0, 0]
+        camera.focus(player_list[playername])
     
     if keys_pressed[K_SPACE]:
         
-        if player.jump_power > 0:
-            player_control(Force(player.jump_power , -pi/2))
-            player.jump_power -= 1
-            player.gravity = False
+        if player_list[playername].jump_power > 0:
+            player_control(Force(player_list[playername].jump_power , -pi/2))
+            player_list[playername].jump_power -= 1
+            player_list[playername].gravity = False
          
                        
-        elif player.jump_power <= 0:          
-            player.gravity = True  
+        elif player_list[playername].jump_power <= 0:          
+            player_list[playername].gravity = True  
             
-            if player.jump_power2 > 0 and player.doublejump_delay <= 0:
-                for force in environment.forces[player]:
+            if player_list[playername].jump_power2 > 0 and player_list[playername].doublejump_delay <= 0:
+                for force in environment.forces[player_list[playername]]:
                     if force.direction == pi/2:
                         force.magnitude = 0
-                player_control(Force(player.jump_power2 , -pi/2))
+                player_control(Force(player_list[playername].jump_power2 , -pi/2))
                 
-                if keys_pressed[K_a] and player.walljump_power_right > 0 and player.walljump_power_left == 0:
-                    player_control(Force(player.jump_power2, 0))
-                    for force in environment.forces[player]:
+                if keys_pressed[K_a] and player_list[playername].walljump_power_right > 0 and player_list[playername].walljump_power_left == 0:
+                    player_control(Force(player_list[playername].jump_power2, 0))
+                    for force in environment.forces[player_list[playername]]:
                         if force.direction == pi:
                             force.magnitude = 0
-                    player.walljump_power_right -= 1
+                    player_list[playername].walljump_power_right -= 1
                     
-                if keys_pressed[K_d] and player.walljump_power_left > 0 and player.walljump_power_right == 0:
-                    player_control(Force(player.jump_power2, pi))
-                    for force in environment.forces[player]:
+                if keys_pressed[K_d] and player_list[playername].walljump_power_left > 0 and player_list[playername].walljump_power_right == 0:
+                    player_control(Force(player_list[playername].jump_power2, pi))
+                    for force in environment.forces[player_list[playername]]:
                         if force.direction == 0:
                             force.magnitude = 0
-                    player.walljump_power_left -= 1
+                    player_list[playername].walljump_power_left -= 1
                         
-                player.jump_power2 -= 1
-                player.gravity = False
+                player_list[playername].jump_power2 -= 1
+                player_list[playername].gravity = False
                 
-        print player.gravity, player.jump_power2
-        if player.jump_power == False and player.jump_power2 == False:
-            player.gravity = True
+        if player_list[playername].jump_power == False and player_list[playername].jump_power2 == False:
+            player_list[playername].gravity = True
     else:
-        player.jump_power = 0
-        if player.jump_power2 < 15:
-            player.jump_power2 = 0
-        player.gravity = True
-        player.doublejump_delay -= 1
-        player.walljump_power_right = 0
-        player.walljump_power_left = 0
-
-                                    
+        player_list[playername].jump_power = 0
+        if player_list[playername].jump_power2 < 15:
+            player_list[playername].jump_power2 = 0
+        player_list[playername].gravity = True
+        player_list[playername].doublejump_delay -= 1
+        player_list[playername].walljump_power_right = 0
+        player_list[playername].walljump_power_left = 0   
     
+    if keys_pressed[K_v]:
+        client.purgepositions()
+                              
 
 def update_screen():
-    screen.fill((0,0,0))
+    screen.fill((255,255,255))
     
     for thing in environment.things:
-        #screen.blit(thing.surface, get_screen_position(environment.positions[thing]))
-        screen.blit(thing.surface, environment.positions[thing])
+        screen.blit(thing.surface, camera.get_coords(environment.positions[thing]))
+        if hasattr(thing, 'name_graphic'):
+            thing.name_graphic_rect.center = thing.rect.center
+            thing.name_graphic_rect.y -= 40
+            screen.blit(thing.name_graphic, camera.get_coords((thing.name_graphic_rect.x, thing.name_graphic_rect.y)))
     pygame.display.update()
     
 def start_game_loop():#GAME LOOP________________________________________________________________
@@ -94,33 +102,43 @@ def start_game_loop():#GAME LOOP________________________________________________
 
         check_for_events()
         environment.advance()
-        update_screen()
-        clock.tick(60)
-
+        camera.scroll(player_list[playername])
         
+        
+        if player_list[playername].multiplayer:
+            client.sendpositions(playername, player_list[playername].rect.x, player_list[playername].rect.y, player_list[playername].rect.width, player_list[playername].rect.height)
+            
+            player_positions = client.recvpositions()
+            for c_player in player_positions:
+                try:
+                    environment.positions[player_list[c_player]] = player_positions[c_player][0], player_positions[c_player][1]                    
+                except KeyError:
+                    player_list[c_player] = Player(c_player, player_positions[c_player][2], player_positions[c_player][3])
+                    environment.add(player_list[c_player], (player_positions[c_player][0], player_positions[c_player][1]))
+
+                
+        update_screen()
+        clock.tick(60)               
+
 
 if __name__ == '__main__':
+
     pygame.init()
-    x_reso = 1280
-    y_reso = 720
-    screen = pygame.display.set_mode((x_reso,y_reso))
+    screen = pygame.display.set_mode((xreso,yreso))
     clock = pygame.time.Clock()
+    camera = Camera(0,0)
+    playername = raw_input('Enter name: ')
+    player_size_x, player_size_y = int(raw_input('Enter width (must be pls reasonable number (like around 30)): ')) , int(raw_input('Enter height (must be reeznubl number): '))
     
-    player = Player(20,30,1)
-    long_tile = Tiles(300,30,2)
-    tall_tile = Tiles(30,400,2)
-    tall_tile2 = Tiles(30,400,2)
-    square_tile = Tiles(200,200,2)
-    
+    player_list = {}
+    player_list[playername] = Player(playername, player_size_x, player_size_y)
     environment = Environment()
-    environment.add(player, (0,100))   
-    environment.add(long_tile, (900,400))
-    environment.add(tall_tile, (400, 100))
-    environment.add(tall_tile2, (100, 100))
-    environment.add(square_tile, (600,500)) 
+    level = Levels()
+    level.load_level2(environment, player_list[playername])    
+    player_control = environment.get_controller(player_list[playername])
     
-    
-    player_control = environment.get_controller(player)
+    client = Client('68.36.84.150', 7777)
+    player_list[playername].multiplayer = True
 
     start_game_loop()
     

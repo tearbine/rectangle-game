@@ -1,6 +1,7 @@
 import pygame
 
 class Thing:
+    id = 0
     def __init__(self, width, height, mass, speedlimit=.5):
         self.width = width
         self.height = height
@@ -11,6 +12,8 @@ class Thing:
         self.speedlimit = speedlimit
         self.gravity = False
         self.colliding = False
+        self.id = Thing.id
+        Thing.id += 1
     
     def __repr__(self):
         return str('Thing')
