@@ -19,7 +19,7 @@ class Levels:
         for tile in environment_add_list:
             environment.add(tile, (environment_add_list[tile]))
         
-        environment.add(player, (0,0))
+        environment.add(player, (0,-100))
     def load_level2(self, environment, player):
         tiles_list = {}
         environment_add_list = {}
@@ -41,6 +41,26 @@ class Levels:
         for tile in environment_add_list:
             environment.add(tile, (environment_add_list[tile]))
         
-        environment.add(player, (0,0))    
+        environment.add(player, (0,-100))    
+    
+    def load_level3(self, environment, player):
+        tiles_list = {}
+        environment_add_list = {}
+        players = []
+         
+        tiles_list[10000,30] = [(0,0)]
+
+        players.append(player)
+        
+        for tiles in tiles_list:
+            for tile in tiles_list[tiles]:
+                environment_add_list[Tiles(tiles[0],tiles[1])] = [tile[0],tile[1]]
+        print environment_add_list
+        
+        for tile in environment_add_list:
+            environment.add(tile, (environment_add_list[tile]))
+        
+        environment.add(player, (0,-100))
+        
         
         

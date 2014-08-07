@@ -1,4 +1,5 @@
 import pygame
+from constants import *
 
 class Thing:
     id = 0
@@ -9,7 +10,8 @@ class Thing:
         self.surface = pygame.Surface((width,height))
         self.rect = self.surface.get_rect()
         self.surface.fill((255,255,255))
-        self.speedlimit = speedlimit
+        self.speed_decay = {UP: .01, DOWN : .01, LEFT : .01, RIGHT : .01}    
+        self.speedlimit = {UP: speedlimit, DOWN : speedlimit, LEFT : speedlimit, RIGHT : speedlimit}      
         self.gravity = False
         self.colliding = False
         self.id = Thing.id
